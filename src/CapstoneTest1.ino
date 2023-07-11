@@ -34,8 +34,10 @@ bool OLEDdisplayInside = true;
 bool previousState = false;
 bool doingAnimation = false;
 int shakeSensitivity = 5000;
-int shakePreviousZ = 16000;
-// Variables for storing temperature
+int shakePreviousY = 100;
+int shakePreviousX = 100;
+
+// Variables for storing environmental data
 int oTemp = 0.0;
 float oWindSpeed = 0.0;
 int oPrecipitation = 0.0;
@@ -43,9 +45,9 @@ int oHumidity = 0.0;
 int iAmount = 0;
 char *oPrecipitationType = "";
 bool updateData = true;
-
 float iTemperature = 0.0;
 float iHumidity = 0.0;
+
 // Create the timers
 Timer getWeatherData(30000, callback2, false);
 // Timer startAnimation(500, connectingAnimation, false);
@@ -55,7 +57,6 @@ void setup()
 {
   Wire.setSpeed(CLOCK_SPEED_100KHZ);
 
-  Serial.begin(9600);
   Wire.begin();
   Blynk.begin(BLYNK_AUTH_TOKEN);
 
@@ -78,9 +79,9 @@ void setup()
   config.setAccelMode(LIS3DH::RATE_100_HZ);
   accel.setup(config);
 
-  while (!Serial.isConnected())
-  {
-  }
+  // while (!Serial.isConnected())
+  // {
+  // }
   while (!AHTSensor.begin())
   {
   }
@@ -94,15 +95,16 @@ void loop()
   display.loop();
   Blynk.run();
 
-  // LIS3DHSample sample;
-  // if (accel.getSample(sample))
-  // {
-  //   if (abs(sample.z - shakePreviousZ) > shakeSensitivity)
-  //   {
-  //     Blynk.logEvent(SHOCKNOTIF);
-  //   }
-  //   shakePreviousZ = sample.z;
-  // }
+  LIS3DHSample sample;
+  if (accel.getSample(sample))
+  {
+    if (abs(sample.y - shakePreviousY) > shakeSensitivity || abs(sample.x - shakePreviousX) > shakeSensitivity)
+    {
+      Blynk.logEvent(SHOCKNOTIF);
+    }
+    shakePreviousX = sample.x;
+    shakePreviousY = sample.y;
+  }
 
   if (client.isConnected())
   {
@@ -124,7 +126,7 @@ void loop()
   // Toggle between button states
   if (digitalRead(BUTTONPIN) && !previousState)
   {
-    Serial.println("Button Pressed" + String(OLEDdisplayInside));
+    // Serial.println("Button Pressed" + String(OLEDdisplayInside));
     OLEDdisplayInside = !OLEDdisplayInside;
     previousState = true;
   }
